@@ -192,14 +192,16 @@
     flex:1 1 auto;
     padding:10px 12px;
     font-size:12px;
-    line-height:1.35;
+    line-height:1.45;
     color:var(--text);
     border-left:3px solid var(--teal);
     display:flex;
     align-items:center;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
   }
   .zone-slot{
     flex:0 0 auto;
