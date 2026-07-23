@@ -112,19 +112,20 @@
     letter-spacing:.06em;
     text-transform:uppercase;
     color:var(--navy-soft);
-    margin:0 0 8px 2px;
+    margin:0 0 6px 0px;
   }
 
   /* --- Tray (термины) --- */
   .tray{
     display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    padding:10px;
+    flex-direction:column;   /* карточки друг под другом */
+    align-items:flex-start;  /* прижать к левому краю */
+    gap:10px;                /* расстояние между карточками */
+    padding:12px;
     background:rgba(255,255,255,.5);
     border:1.5px dashed var(--line);
     border-radius:var(--radius-lg);
-    min-height:96px;
+    min-height:260px;        /* высота поля */
   }
 
   /* --- Term badge card --- */
@@ -135,6 +136,8 @@
     gap:8px;
     background:var(--card-bg);
     padding:10px 12px 10px 16px;
+    width:fit-content;
+    max-width:100%;
     border-radius:var(--radius-sm);
     box-shadow:var(--shadow);
     cursor:grab;
