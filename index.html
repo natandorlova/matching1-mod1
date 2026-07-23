@@ -95,9 +95,10 @@
      BOARD LAYOUT
      ============================================================ */
   .board{
-   display:grid;
+    display:grid;
     grid-template-columns:240px 1fr;
     gap:18px;
+    align-items:stretch;
   }
   @media (max-width:760px){
     .board{ grid-template-columns:1fr; gap:12px; }
