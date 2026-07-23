@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Сопоставление: термин — определение</title>
+<style>
+
+  /* ============================================================
+     ШРИФТЫ
+     ============================================================ */
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&display=swap');
+
+  /* ============================================================
+     ТОКЕНЫ ДИЗАЙНА
+     ============================================================ */
+  :root{
+    --navy:      #1F2A44;
+    --navy-soft: #384A6E;
+    --teal:      #2F8F82;
+    --teal-soft: #E6F3F1;
+    --amber:     #F2A65A;
+    --bg:        #F6F5F1;
+    --card-bg:   #FFFFFF;
+    --text:      #1B1E27;
+    --muted:     #737A8C;
+    --line:      #E4E2DA;
+
+    --success:    #2F9E58;
+    --success-bg: #E6F7EB;
+    --error:      #E15241;
+    --error-bg:   #FDEAE7;
+
+    --radius-lg: 18px;
+    --radius-sm: 10px;
+    --shadow:       0 6px 18px rgba(31,42,68,.09);
+    --shadow-hover: 0 14px 30px rgba(31,42,68,.18);
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  /* subtle "shipping route" backdrop texture */
+  body{
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(31,42,68,.05) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  .wrap{
+    max-width:960px;
+    margin:0 auto;
+    padding:16px 20px 20px;
+  }
+
+  /* ============================================================
+     HEADER
+     ============================================================ */
+  .head{ margin-bottom:12px; }
+  .eyebrow{
+    display:none;
+    align-items:center; gap:8px;
+    font-family:'Manrope',sans-serif;
+    font-weight:700; font-size:12px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--teal);
+    background:var(--teal-soft);
+    padding:5px 12px;
+    border-radius:999px;
+    margin-bottom:12px;
+  }
+  h1{
+    display:none;
+    font-family:'Manrope',sans-serif;
+    font-weight:800;
+    font-size:clamp(22px,3.2vw,30px);
+    line-height:1.2;
+    margin:0 0 8px;
+    color:var(--navy);
+  }
+  .instruction{
+    margin:0;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  /* ============================================================
+     BOARD LAYOUT
+     ============================================================ */
+  .board{
+    display:grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap:16px;
+    margin-top:14px;
+    align-items:start;
+  }
+  @media (max-width:760px){
+    .board{ grid-template-columns:1fr; gap:12px; }
+  }
+
+  .panel-title{
+    font-family:'Manrope',sans-serif;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--navy-soft);
+    margin:0 0 8px 2px;
+  }
+
+  /* --- Tray (термины) --- */
+  .tray{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:10px;
+    background:rgba(255,255,255,.5);
+    border:1.5px dashed var(--line);
+    border-radius:var(--radius-lg);
+    min-height:96px;
+  }
+
+  /* --- Term badge card --- */
+  .card{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card-bg);
+    padding:10px 12px 10px 16px;
+    border-radius:var(--radius-sm);
+    box-shadow:var(--shadow);
+    cursor:grab;
+    user-select:none;
+    touch-action:none;
+    font-weight:600;
+    font-size:13px;
+    color:var(--text);
+    transition: box-shadow .18s ease, transform .18s ease;
+    border:1.5px solid transparent;
+  }
+  .card::before{
+    /* badge clip */
+    content:"";
+    position:absolute;
+    top:-4px; left:12px;
+    width:18px; height:8px;
+    background:var(--navy);
+    border-radius:0 0 4px 4px;
+  }
+  .card:hover{ box-shadow:var(--shadow-hover); transform:translateY(-1px); }
+  .card.dragging{
+    cursor:grabbing;
+    box-shadow:var(--shadow-hover);
+    transform:scale(1.06) rotate(-1deg);
+    z-index:1000;
+  }
+  .card.selected{
+    border-color:var(--teal);
+    box-shadow:0 0 0 3px var(--teal-soft), var(--shadow);
+  }
+  .card.placed{ animation:popIn .28s cubic-bezier(.34,1.56,.64,1); }
+  .card.locked{ cursor:default; opacity:.92; }
+
+  @keyframes popIn{
+    0%{ transform:scale(.82); opacity:.6; }
+    65%{ transform:scale(1.06); }
+    100%{ transform:scale(1); opacity:1; }
+  }
+
+  /* --- Zones (определения) --- */
+  .zones{ display:flex; flex-direction:column; gap:8px; }
+
+  .zone{
+    display:flex;
+    align-items:stretch;
+    gap:0;
+    background:var(--card-bg);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    transition: box-shadow .2s ease;
+  }
+  .zone-label{
+    flex:1 1 auto;
+    padding:10px 12px;
+    font-size:12px;
+    line-height:1.35;
+    color:var(--text);
+    border-left:3px solid var(--teal);
+    display:flex;
+    align-items:center;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .zone-slot{
+    flex:0 0 auto;
+    width:48%;
+    min-width:140px;
+    min-height:48px;
+    margin:5px 8px 5px 0;
+    border-radius:10px;
+    border:2px dashed var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:3px;
+    transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+  }
+  .zone-slot:empty::after{
+    content:"Перетащите сюда";
+    font-size:11px;
+    color:var(--muted);
+    font-style:italic;
+  }
+  .zone-slot.active{
+    border-color:var(--teal);
+    background:var(--teal-soft);
+    box-shadow:inset 0 0 0 2px var(--teal);
+  }
+  .zone-slot .card{ width:100%; cursor:grab; }
+
+  .zone.correct{ box-shadow:0 0 0 2px var(--success), var(--shadow); }
+  .zone.correct .zone-slot{ background:var(--success-bg); border-style:solid; border-color:var(--success); }
+  .zone.correct .zone-label{ border-left-color:var(--success); }
+  .zone.correct .card{ animation:bounceOk .55s ease; }
+
+  .zone.incorrect{ box-shadow:0 0 0 2px var(--error), var(--shadow); }
+  .zone.incorrect .zone-slot{ background:var(--error-bg); border-style:solid; border-color:var(--error); }
+  .zone.incorrect .zone-label{ border-left-color:var(--error); }
+  .zone.incorrect .card{ animation:shakeNo .45s ease; }
+
+  @keyframes bounceOk{
+    0%{ transform:translateY(0); }
+    30%{ transform:translateY(-9px); }
+    55%{ transform:translateY(0); }
+    75%{ transform:translateY(-4px); }
+    100%{ transform:translateY(0); }
+  }
+  @keyframes shakeNo{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-7px); }
+    40%{ transform:translateX(7px); }
+    60%{ transform:translateX(-4px); }
+    80%{ transform:translateX(4px); }
+  }
+
+  /* ============================================================
+     CONTROLS
+     ============================================================ */
+  .controls{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:14px;
+  }
+  .btn{
+    font-family:'Manrope',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn:active{ transform:scale(.96); }
+  .btn-primary{
+    background:var(--navy);
+    color:#fff;
+    box-shadow:0 6px 16px rgba(31,42,68,.28);
+  }
+  .btn-primary:hover{ background:var(--navy-soft); }
+  .btn-ghost{
+    background:transparent;
+    color:var(--navy);
+    border:1.5px solid var(--line);
+  }
+  .btn-ghost:hover{ border-color:var(--navy); }
+
+  .attempts{
+    margin-left:auto;
+    font-size:12px;
+    color:var(--muted);
+    font-weight:500;
+  }
+  .attempts span{ font-weight:700; color:var(--navy); }
+
+  /* ============================================================
+     RESULT BANNER
+     ============================================================ */
+  .result-banner{
+    margin-top:12px;
+    padding:10px 14px;
+    border-radius:10px;
+    font-weight:600;
+    font-size:13px;
+    animation:popIn .25s ease;
+  }
+  .result-banner.success{ background:var(--success-bg); color:var(--success); }
+  .result-banner.error{ background:var(--error-bg); color:var(--error); }
+  .result-banner.warning{ background:#FDF3E3; color:#9A6A17; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <header class="head">
+      <span class="eyebrow">Интерактивное задание</span>
+      <h1 id="exTitle"></h1>
+      <p class="instruction" id="exInstruction"></p>
+    </header>
+
+    <div class="board">
+      <section>
+        <p class="panel-title" id="trayTitle">Термины</p>
+        <div class="tray" id="tray"></div>
+      </section>
+      <section>
+        <p class="panel-title" id="zonesTitle">Определения</p>
+        <div class="zones" id="zones"></div>
+      </section>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-primary" id="btnCheck">Проверить</button>
+      <button class="btn btn-ghost" id="btnRetry">Попробовать ещё раз</button>
+      <div class="attempts">Попыток: <span id="attemptsCount">0</span></div>
+    </div>
+
+    <div class="result-banner" id="resultBanner" hidden></div>
+  </div>
+
+<script>
+(function(){
+
+  /* ============================================================
+     ⚙️ НАСТРОЙКИ УПРАЖНЕНИЯ — меняйте только этот блок,
+     чтобы получить новое задание без переписывания логики.
+     ============================================================ */
+  const EXERCISE = {
+    title: "",
+    instruction: "Соедините термин с его определением. Перетащите карточку термина в нужную зону справа. Когда все карточки будут расставлены — нажмите «Проверить».",
+    trayLabel: "Термины",
+    zonesLabel: "Определения",
+    pairs: [
+      { id: "p1", card: "Предварительная заявка", zone: "Документ, содержащий исходную информацию о предстоящей перевозке. Создается отделом продаж. Является основой для определения параметров/стоимости сделки, оформления документов." },
+      { id: "p2", card: "Агентский договор", zone: "Документ, в рамках которого компания обязывается за вознаграждение оказать клиенту услугу по выполнению всего объема обязательств при ВЭД-сделке: доставке, таможенному оформлению, оплате товара и т.д." },
+      { id: "p3", card: "Генеральный груз", zone: "Груз одного отправителя, который занимает весь транспорт или отдельный контейнер и перевозится без объединения с грузами других клиентов." },
+      { id: "p4", card: "Сборный груз", zone: "Груз, который перевозится вместе с грузами других отправителей в одном транспортном средстве или контейнере, при этом каждый клиент оплачивает только занимаемое им место или объем." },
+      { id: "p5", card: "Спецификация", zone: "Подробное описание характеристик поставляемого товара и условий конкретной поставки." }
+    ]
+  };
+  /* ============================================================ */
+
+
+  const trayEl   = document.getElementById('tray');
+  const zonesEl  = document.getElementById('zones');
+  const bannerEl = document.getElementById('resultBanner');
+  const attemptsCountEl = document.getElementById('attemptsCount');
+
+  let attempts = 0;
+  let draggedCard = null;
+  let dragOffsetX = 0, dragOffsetY = 0;
+  let startX = 0, startY = 0;
+  let originParent = null, originNext = null;
+  let moved = false;
+  let currentTargetSlot = null;
+  let selectedCard = null;
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* ---------------- BUILD / RESET ---------------- */
+
+  function build(){
+    document.getElementById('exTitle').textContent = EXERCISE.title;
+    document.getElementById('exInstruction').textContent = EXERCISE.instruction;
+    document.getElementById('trayTitle').textContent = EXERCISE.trayLabel || 'Карточки';
+    document.getElementById('zonesTitle').textContent = EXERCISE.zonesLabel || 'Зоны';
+
+    trayEl.innerHTML = '';
+    zonesEl.innerHTML = '';
+    bannerEl.hidden = true;
+
+    const shuffledCards = shuffle(EXERCISE.pairs);
+    const shuffledZones = shuffle(EXERCISE.pairs);
+
+    shuffledCards.forEach(pair => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.setAttribute('data-pair', pair.id);
+      card.setAttribute('tabindex', '0');
+      card.innerHTML = `<span class="card-text">${escapeHtml(pair.card)}</span>`;
+      attachCardEvents(card);
+      trayEl.appendChild(card);
+    });
+
+    shuffledZones.forEach(pair => {
+      const zone = document.createElement('div');
+      zone.className = 'zone';
+      zone.setAttribute('data-pair', pair.id);
+      zone.innerHTML = `
+        <div class="zone-label" title="${escapeHtml(pair.zone)}">${escapeHtml(pair.zone)}</div>
+        <div class="zone-slot"></div>
+      `;
+      attachZoneEvents(zone.querySelector('.zone-slot'));
+      zonesEl.appendChild(zone);
+    });
+  }
+
+  /* ---------------- DRAG & DROP (Pointer Events) ---------------- */
+
+  function attachCardEvents(card){
+    card.addEventListener('pointerdown', onPointerDown);
+  }
+
+  function onPointerDown(e){
+    const card = e.currentTarget;
+    if(card.classList.contains('locked')) return;
+    e.preventDefault();
+
+    try{ card.setPointerCapture(e.pointerId); }catch(err){}
+
+    const rect = card.getBoundingClientRect();
+    draggedCard = card;
+    dragOffsetX = e.clientX - rect.left;
+    dragOffsetY = e.clientY - rect.top;
+    startX = e.clientX;
+    startY = e.clientY;
+    moved = false;
+    originParent = card.parentElement;
+    originNext = card.nextElementSibling;
+
+    card.style.width = rect.width + 'px';
+    card.style.height = rect.height + 'px';
+    card.style.position = 'fixed';
+    card.style.left = rect.left + 'px';
+    card.style.top = rect.top + 'px';
+    card.style.margin = '0';
+    document.body.appendChild(card);
+    card.classList.add('dragging');
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  }
+
+  function onPointerMove(e){
+    if(!draggedCard) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if(Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+
+    draggedCard.style.left = (e.clientX - dragOffsetX) + 'px';
+    draggedCard.style.top  = (e.clientY - dragOffsetY) + 'px';
+
+    const cardRect = draggedCard.getBoundingClientRect();
+    const cx = cardRect.left + cardRect.width / 2;
+    const cy = cardRect.top + cardRect.height / 2;
+
+    let best = null, bestDist = Infinity;
+    document.querySelectorAll('.zone-slot').forEach(slot => {
+      const r = slot.getBoundingClientRect();
+      slot.classList.remove('active');
+      if(cx >= r.left - 24 && cx <= r.right + 24 && cy >= r.top - 24 && cy <= r.bottom + 24){
+        const sx = r.left + r.width / 2, sy = r.top + r.height / 2;
+        const dist = Math.hypot(cx - sx, cy - sy);
+        if(dist < bestDist){ bestDist = dist; best = slot; }
+      }
+    });
+    if(best) best.classList.add('active');
+    currentTargetSlot = best;
+  }
+
+  function onPointerUp(){
+    if(!draggedCard) return;
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+
+    const card = draggedCard;
+    card.classList.remove('dragging');
+    document.querySelectorAll('.zone-slot').forEach(s => s.classList.remove('active'));
+
+    if(!moved){
+      // короткое нажатие — режим "выбрать / поставить" (удобно для тач-устройств)
+      resetInlineStyles(card);
+      originParent.insertBefore(card, originNext);
+      toggleSelect(card);
+      draggedCard = null;
+      currentTargetSlot = null;
+      return;
+    }
+
+    if(currentTargetSlot){
+      placeCardInSlot(card, currentTargetSlot);
+    } else {
+      resetInlineStyles(card);
+      originParent.insertBefore(card, originNext);
+    }
+
+    clearSelection();
+    draggedCard = null;
+    currentTargetSlot = null;
+  }
+
+  function resetInlineStyles(card){
+    card.style.position = '';
+    card.style.left = '';
+    card.style.top = '';
+    card.style.width = '';
+    card.style.height = '';
+    card.style.margin = '';
+  }
+
+  function placeCardInSlot(card, slot){
+    const occupant = slot.querySelector('.card');
+    if(occupant && occupant !== card){
+      returnCardToTray(occupant);
+    }
+    const prevZone = card.closest('.zone');
+    if(prevZone) clearZoneResult(prevZone);
+
+    resetInlineStyles(card);
+    slot.appendChild(card);
+    card.classList.remove('placed');
+    void card.offsetWidth; // reflow, чтобы анимация перезапустилась
+    card.classList.add('placed');
+
+    clearZoneResult(slot.closest('.zone'));
+    bannerEl.hidden = true;
+  }
+
+  function returnCardToTray(card){
+    const zone = card.closest('.zone');
+    resetInlineStyles(card);
+    trayEl.appendChild(card);
+    if(zone) clearZoneResult(zone);
+  }
+
+  function clearZoneResult(zone){
+    if(zone) zone.classList.remove('correct', 'incorrect');
+  }
+
+  /* ---------------- Tap-to-select fallback (мобильные) ---------------- */
+
+  function toggleSelect(card){
+    if(selectedCard === card){
+      clearSelection();
+      return;
+    }
+    clearSelection();
+    selectedCard = card;
+    card.classList.add('selected');
+  }
+
+  function clearSelection(){
+    if(selectedCard){
+      selectedCard.classList.remove('selected');
+      selectedCard = null;
+    }
+  }
+
+  function attachZoneEvents(slot){
+    slot.addEventListener('click', () => {
+      if(selectedCard && !slot.querySelector('.card')){
+        placeCardInSlot(selectedCard, slot);
+        clearSelection();
+      }
+    });
+  }
+
+  /* ---------------- Проверка ---------------- */
+
+  function checkAnswers(){
+    attempts++;
+    attemptsCountEl.textContent = attempts;
+
+    let allCorrect = true;
+    let allFilled = true;
+
+    document.querySelectorAll('.zone').forEach(zone => {
+      zone.classList.remove('correct', 'incorrect');
+      const slot = zone.querySelector('.zone-slot');
+      const card = slot.querySelector('.card');
+
+      if(!card){
+        allFilled = false;
+        allCorrect = false;
+        zone.classList.add('incorrect');
+        return;
+      }
+      const match = card.getAttribute('data-pair') === zone.getAttribute('data-pair');
+      if(match){
+        zone.classList.add('correct');
+      } else {
+        zone.classList.add('incorrect');
+        allCorrect = false;
+      }
+    });
+
+    showBanner(allCorrect, allFilled);
+  }
+
+  function showBanner(allCorrect, allFilled){
+    bannerEl.hidden = false;
+    if(!allFilled){
+      bannerEl.className = 'result-banner warning';
+      bannerEl.textContent = 'Сначала расставьте все карточки, затем нажмите «Проверить».';
+    } else if(allCorrect){
+      bannerEl.className = 'result-banner success';
+      bannerEl.textContent = 'Отлично! Все соответствия верны 🎉';
+    } else {
+      bannerEl.className = 'result-banner error';
+      bannerEl.textContent = 'Есть ошибки — попробуйте ещё раз.';
+    }
+  }
+
+  function retry(){
+    build();
+  }
+
+  document.getElementById('btnCheck').addEventListener('click', checkAnswers);
+  document.getElementById('btnRetry').addEventListener('click', retry);
+
+  build();
+
+})();
+</script>
+
+</body>
+</html>
